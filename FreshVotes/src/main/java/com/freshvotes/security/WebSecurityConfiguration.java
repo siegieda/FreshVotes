@@ -1,16 +1,21 @@
 package com.freshvotes.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	
+	@Autowired
+	private UserDetailsService userDetailsService;
+
 	@Bean
 	public PasswordEncoder getPasswordEncoder() {
 		return new BCryptPasswordEncoder();
@@ -18,11 +23,15 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 	
 	@Override
 	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-		auth.inMemoryAuthentication()
-		.passwordEncoder(getPasswordEncoder())
-		.withUser("admin")
-		.password(getPasswordEncoder().encode("admin"))
-		.roles("USER");
+		auth
+		.userDetailsService(userDetailsService)
+		.passwordEncoder(getPasswordEncoder());
+		
+//		auth.inMemoryAuthentication()
+//		.passwordEncoder(getPasswordEncoder())
+//		.withUser("admin")
+//		.password(getPasswordEncoder().encode("admin"))
+//		.roles("USER");
 	}
 	
 	@Override
@@ -31,6 +40,8 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter {
 				/* .csrf().disable() */
 		.authorizeRequests()
 		.antMatchers("/").permitAll()
+		.antMatchers("/register").permitAll()
+		.antMatchers("/admin/**").hasRole("ADMIN")
 		.anyRequest().hasRole("USER").and()
 		.formLogin()
 		.loginPage("/login")
